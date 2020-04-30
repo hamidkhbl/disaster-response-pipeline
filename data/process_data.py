@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
-import logging
+import  coloredlogs, logging
 import datetime
 
 def process_data():
@@ -14,14 +14,20 @@ def process_data():
     Output: A SQLlite database file.
     '''
     # logging
-    logging.basicConfig(filename="process_data.log",
+    coloredlogs.install()
+    logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)-8s %(message)s', 
-                        datefmt='%Y-%m-%d %H:%M:%S')
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        handlers=[
+                            logging.FileHandler("process_data.log"),
+                            logging.StreamHandler()
+    ])
 
     # load messages and categories dataset
     try:
         messages = pd.read_csv('messages.csv')
         categories = pd.read_csv('categories.csv')
+        logging.info('Data imported successfully.')
     except:
         logging.exception('Failed to read csv files.')
         raise
@@ -57,16 +63,17 @@ def process_data():
         # drop duplicates
         df.drop_duplicates(inplace = True)
 
-        print('Info: {} duplicate rows droped.'.format(duplicates_count))
+        logging.info('Data cleaned successfully.')
     except:
-        logging.exception('Failed in cleaning level.')
+        logging.exception('Failed to cleaning the data.')
 
     db_name = 'disaster_tweets.db'
     table_name = 'messages'
+
     try:
         engine = create_engine('sqlite:///'+db_name)
         df.to_sql(table_name, engine, index=False)
-        logging.info('info: Clean data stored on {} SQLlite database'.format(db_name))
+        logging.info('Clean data stored on {} SQLlite database'.format(db_name))
     except:
         logging.exception('Not able to create the database')
         raise
