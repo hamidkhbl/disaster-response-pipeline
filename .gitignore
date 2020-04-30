@@ -1,3 +1,4 @@
 *.csv
 *.db
 *.log
+test.py

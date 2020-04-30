@@ -4,17 +4,18 @@ import numpy as np
 from sqlalchemy import create_engine
 import  coloredlogs, logging
 import datetime
+import requests
 
 def process_data():
     '''
-    This function reads data from csv files, merges them and cleans the data.
+    This function downloads csv files ,reads data from them, merges and cleans the data.
     Finally, stores the cleaned data in a SQLlite database.
 
     Inputs: No input.
     Output: A SQLlite database file.
     '''
     # logging
-    coloredlogs.install()
+    #coloredlogs.install()
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)-8s %(message)s', 
                         datefmt='%Y-%m-%d %H:%M:%S',
@@ -22,6 +23,23 @@ def process_data():
                             logging.FileHandler("process_data.log"),
                             logging.StreamHandler()
     ])
+
+    # download csv files
+    categories_link = 'https://drive.google.com/u/0/uc?id=1cm6VF1dTLPxXt_97haeZUALOlqCpcIch&export=download'
+    messages_link = 'https://drive.google.com/u/0/uc?id=1OBvKGf2RWVmQSvndI3_mSMjHsBIivoEw&export=download'
+    try:
+        logging.info('Downloading CSV files ...')
+        r = requests.get(categories_link)
+        with open('categories.csv', 'wb') as f: 
+            f.write(r.content)
+
+        r = requests.get(messages_link)
+        with open('messages.csv', 'wb') as f: 
+            f.write(r.content)
+        logging.info('CSV files downloaded successfully.')
+    except:
+        logging.exception('Failed to download the CSV files')
+        raise
 
     # load messages and categories dataset
     try:
