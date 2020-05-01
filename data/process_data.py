@@ -53,8 +53,7 @@ def process_data():
     # clean
     try:
         # merge datasets
-        df = messages.merge(categories, on = 'id')
-
+        df = messages.merge(categories, on = 'id', how = 'outer')
         # Extract column names
         cols = []
         for title in categories.categories.tolist()[0].split(';'):
@@ -64,17 +63,18 @@ def process_data():
         categories.categories = categories.categories.str.split(';')
         categories_new = pd.DataFrame(categories.categories.tolist(),columns = cols)
         for c in cols:
-            categories_new[c] = categories_new[c].str.split('-',1)
-            categories_new[c] = categories_new[c].apply(lambda x: x[1])
+            categories_new[c] = categories_new[c].str.split('-')
+            categories_new[c] = categories_new[c].apply(lambda x: float(x[1]))
 
         # delete dataframe
+        categories_new.to_csv('cat.csv')
         del categories
 
         # concat messages with categories
         df = pd.concat([df,categories_new], axis = 1, sort = False)
 
         # delete categories column
-        df.drop(['categories'], axis = 1, inplace = True)
+        #df.drop(['categories'], axis = 1, inplace = True)
 
         # count duplicates
         duplicates_count = df.shape[0] - df.drop_duplicates().shape[0]
@@ -82,7 +82,18 @@ def process_data():
         # drop duplicates
         df.drop_duplicates(inplace = True)
 
+        # drop null values
+        df.dropna(how='any', inplace = True)
+
+        # convert string columns to numeric
+        for c in df.columns[5:]:
+            df[c] = pd.to_numeric(df[c])
+
+        # replace 2 (indirectly related) with 1 for related column
+        df['related'] = df['related'].replace(2,1)
+
         logging.info('Data cleaned successfully.')
+
     except:
         logging.exception('Failed to cleaning the data.')
 
@@ -92,7 +103,8 @@ def process_data():
     try:
         engine = create_engine('sqlite:///'+db_name)
         df.to_sql(table_name, engine, index=False)
-        logging.info('Clean data stored on {} SQLlite database'.format(db_name))
+        logging.info('Clean data stored on {} SQLlite database \n'.format(db_name))
+        df.to_csv('all.csv')
     except:
         logging.exception('Not able to create the database')
         raise
