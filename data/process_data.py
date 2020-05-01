@@ -2,7 +2,8 @@
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
-import  coloredlogs, logging
+#import  coloredlogs
+import logging
 import datetime
 import requests
 
