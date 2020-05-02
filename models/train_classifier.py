@@ -14,6 +14,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
+from sklearn import svm
 import sqlite3
 import nltk
 import datetime
@@ -25,8 +26,9 @@ nltk.download('wordnet')
 conn = sqlite3.connect('../data/disaster_tweets.db')
 df = pd.read_sql('SELECT * FROM messages', conn)
 X = df['message']
-Y = df[df.columns[4:]]
+Y = df[df.columns[3:]]
 
+porter = PorterStemmer()
 lemmatizer = WordNetLemmatizer()
 def tokenize(text):
     inner_text = re.sub(r"[^a-zA-Z0-1]"," ", text.lower())
@@ -59,12 +61,15 @@ cv = GridSearchCV(pipeline, param_grid=parameters)
 
 print('Training the model...')
 s_t = datetime.datetime.now()
+
 pipeline.fit(X_train, y_train)
 y_pred = pipeline.predict(X_test)
-print('accuracy_score',accuracy_score(y_test, y_pred))
+print('accuracy_score:',accuracy_score(y_test, y_pred))
+
 e_t = datetime.datetime.now()
 print(e_t - s_t)
 
 import pickle
+
 # save the model to disk
 pickle.dump(pipeline, open('model.pkl', 'wb'))
