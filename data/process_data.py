@@ -6,6 +6,12 @@ from sqlalchemy import create_engine
 import logging
 import datetime
 import requests
+import os
+
+try:
+    os.remove('disaster_tweets.db')
+except OSError:
+    pass
 
 def process_data():
     '''
@@ -53,7 +59,8 @@ def process_data():
     # clean
     try:
         # merge datasets
-        df = messages.merge(categories, on = 'id', how = 'outer')
+        df = messages.merge(categories, on = 'id')
+
         # Extract column names
         cols = []
         for title in categories.categories.tolist()[0].split(';'):
@@ -65,22 +72,23 @@ def process_data():
         for c in cols:
             categories_new[c] = categories_new[c].str.split('-')
             categories_new[c] = categories_new[c].apply(lambda x: float(x[1]))
-
+        
         # delete dataframe
-        categories_new.to_csv('cat.csv')
         del categories
 
         # concat messages with categories
         df = pd.concat([df,categories_new], axis = 1, sort = False)
 
-        # delete categories column
-        #df.drop(['categories'], axis = 1, inplace = True)
+        # delete unuseful columns
+        df.drop(['categories','original'], axis = 1, inplace = True)
 
         # count duplicates
         duplicates_count = df.shape[0] - df.drop_duplicates().shape[0]
-
+        
         # drop duplicates
         df.drop_duplicates(inplace = True)
+
+        df.to_csv('all.csv')
 
         # drop null values
         df.dropna(how='any', inplace = True)
