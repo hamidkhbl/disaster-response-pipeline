@@ -2,11 +2,29 @@
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
-#import  coloredlogs
 import logging
 import datetime
 import requests
 import os
+import sys
+
+download = False
+try:
+    messages_csv = sys.argv[1]
+    categories_csv = sys.argv[2]
+    db_name = sys.argv[3]
+except:
+    print('csv files will be downloaded and result will be saved on disaster_tweets.db')
+    download = True
+    
+# logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(levelname)-8s %(message)s', 
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    handlers=[
+                        logging.FileHandler("process_data.log"),
+                        logging.StreamHandler()
+])
 
 def download_csv():
     '''
@@ -29,7 +47,7 @@ def download_csv():
         logging.exception('Failed to download the CSV files')
         raise
 
-def process_data(messages_csv = 'messages.csv', categories_csv = 'categories.csv', db_name = 'disaster_tweets.db'):
+def process_data(messages_csv, categories_csv, db_name):
     '''
     This function reads data from csv files, merges and cleans the data.
     Finally, stores the cleaned data in a SQLlite database.
@@ -37,16 +55,6 @@ def process_data(messages_csv = 'messages.csv', categories_csv = 'categories.csv
     Inputs: No input.
     Output: A SQLlite database file.
     '''
-    # logging
-    #coloredlogs.install()
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s %(levelname)-8s %(message)s', 
-                        datefmt='%Y-%m-%d %H:%M:%S',
-                        handlers=[
-                            logging.FileHandler("process_data.log"),
-                            logging.StreamHandler()
-    ])
-
     # load messages and categories dataset
     try:
         messages = pd.read_csv(messages_csv)
@@ -87,8 +95,6 @@ def process_data(messages_csv = 'messages.csv', categories_csv = 'categories.csv
         # drop duplicates
         df.drop_duplicates(inplace = True)
 
-        df.to_csv('all.csv')
-
         # drop null values
         df.dropna(how='any', inplace = True)
 
@@ -110,9 +116,12 @@ def process_data(messages_csv = 'messages.csv', categories_csv = 'categories.csv
         engine = create_engine('sqlite:///'+db_name)
         df.to_sql(table_name, engine, index=False)
         logging.info('Clean data stored on {} SQLlite database \n'.format(db_name))
-        df.to_csv('all.csv')
     except:
         logging.exception('Not able to create the database')
         raise
 
-process_data()
+if download:
+    download_csv()
+    process_data('messages.csv' , 'categories.csv', 'disaster_tweets.db')
+else:
+    process_data(messages_csv , categories_csv, db_name)
