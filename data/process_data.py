@@ -94,7 +94,7 @@ def process_data():
         df.dropna(how='any', inplace = True)
 
         # convert string columns to numeric
-        for c in df.columns[5:]:
+        for c in df.columns[3:]:
             df[c] = pd.to_numeric(df[c])
 
         # replace 2 (indirectly related) with 1 for related column
