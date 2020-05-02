@@ -8,30 +8,11 @@ import datetime
 import requests
 import os
 
-try:
-    os.remove('disaster_tweets.db')
-except OSError:
-    pass
-
-def process_data():
+def download_csv():
     '''
-    This function downloads csv files ,reads data from them, merges and cleans the data.
-    Finally, stores the cleaned data in a SQLlite database.
-
-    Inputs: No input.
-    Output: A SQLlite database file.
+    This method download csv files for the project 
+    and stores them on the current directory.
     '''
-    # logging
-    #coloredlogs.install()
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s %(levelname)-8s %(message)s', 
-                        datefmt='%Y-%m-%d %H:%M:%S',
-                        handlers=[
-                            logging.FileHandler("process_data.log"),
-                            logging.StreamHandler()
-    ])
-
-    # download csv files
     categories_link = 'https://drive.google.com/u/0/uc?id=1cm6VF1dTLPxXt_97haeZUALOlqCpcIch&export=download'
     messages_link = 'https://drive.google.com/u/0/uc?id=1OBvKGf2RWVmQSvndI3_mSMjHsBIivoEw&export=download'
     try:
@@ -48,10 +29,28 @@ def process_data():
         logging.exception('Failed to download the CSV files')
         raise
 
+def process_data(messages_csv = 'messages.csv', categories_csv = 'categories.csv', db_name = 'disaster_tweets.db'):
+    '''
+    This function reads data from csv files, merges and cleans the data.
+    Finally, stores the cleaned data in a SQLlite database.
+
+    Inputs: No input.
+    Output: A SQLlite database file.
+    '''
+    # logging
+    #coloredlogs.install()
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(levelname)-8s %(message)s', 
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        handlers=[
+                            logging.FileHandler("process_data.log"),
+                            logging.StreamHandler()
+    ])
+
     # load messages and categories dataset
     try:
-        messages = pd.read_csv('messages.csv')
-        categories = pd.read_csv('categories.csv')
+        messages = pd.read_csv(messages_csv)
+        categories = pd.read_csv(categories_csv)
         logging.info('Data imported successfully.')
     except:
         logging.exception('Failed to read csv files.')
@@ -105,7 +104,6 @@ def process_data():
     except:
         logging.exception('Failed to cleaning the data.')
 
-    db_name = 'disaster_tweets.db'
     table_name = 'messages'
 
     try:

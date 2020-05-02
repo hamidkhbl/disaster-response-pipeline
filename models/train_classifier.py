@@ -39,13 +39,13 @@ def tokenize(text):
 
 from sklearn.pipeline import Pipeline, FeatureUnion
 pipeline = Pipeline([
-    ('vect',CountVectorizer(tokenizer=tokenize, ngram_range=(1,2))),
-    ('tfidf', TfidfTransformer()),
+    ('vect',CountVectorizer(tokenizer=tokenize)),
+    ('tfidf', TfidfTransformer(smooth_idf = False)),
     ('clf', RandomForestClassifier())
 ])
 
 from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, Y)
+X_train, X_test, y_train, y_test = train_test_split(X, Y, random_state = 42)
 
 from sklearn.model_selection import GridSearchCV
 parameters = {
