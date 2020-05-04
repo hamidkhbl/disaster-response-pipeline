@@ -8,24 +8,6 @@ import requests
 import os
 import sys
 
-download = False
-try:
-    messages_csv = sys.argv[1]
-    categories_csv = sys.argv[2]
-    db_name = sys.argv[3]
-except:
-    print('csv files will be downloaded and result will be saved on disaster_tweets.db')
-    download = True
-    
-# logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)-8s %(message)s', 
-                    datefmt='%Y-%m-%d %H:%M:%S',
-                    handlers=[
-                        logging.FileHandler("process_data.log"),
-                        logging.StreamHandler()
-])
-
 def download_csv():
     '''
     This method download csv files for the project 
@@ -33,95 +15,116 @@ def download_csv():
     '''
     categories_link = 'https://drive.google.com/u/0/uc?id=1cm6VF1dTLPxXt_97haeZUALOlqCpcIch&export=download'
     messages_link = 'https://drive.google.com/u/0/uc?id=1OBvKGf2RWVmQSvndI3_mSMjHsBIivoEw&export=download'
-    try:
-        logging.info('Downloading CSV files ...')
-        r = requests.get(categories_link)
-        with open('categories.csv', 'wb') as f: 
-            f.write(r.content)
 
-        r = requests.get(messages_link)
-        with open('messages.csv', 'wb') as f: 
-            f.write(r.content)
-        logging.info('CSV files downloaded successfully.')
-    except:
-        logging.exception('Failed to download the CSV files')
-        raise
+    r = requests.get(categories_link)
+    with open('categories.csv', 'wb') as f: 
+        f.write(r.content)
 
-def process_data(messages_csv, categories_csv, db_name):
+    r = requests.get(messages_link)
+    with open('messages.csv', 'wb') as f: 
+        f.write(r.content)
+
+
+def load_data(messages_csv, categories_csv):
     '''
-    This function reads data from csv files, merges and cleans the data.
-    Finally, stores the cleaned data in a SQLlite database.
+    Description
+    ----------
 
-    Inputs: No input.
-    Output: A SQLlite database file.
+    Parameters
+    ----------
+
+    Returns
+    ----------
     '''
-    # load messages and categories dataset
-    try:
-        messages = pd.read_csv(messages_csv)
-        categories = pd.read_csv(categories_csv)
-        logging.info('Data imported successfully.')
-    except:
-        logging.exception('Failed to read csv files.')
-        raise
-    # clean
-    try:
-        # merge datasets
-        df = messages.merge(categories, on = 'id')
+    messages = pd.read_csv(messages_csv)
+    categories = pd.read_csv(categories_csv)
+    df = messages.merge(categories, on = 'id')
+    return df
 
-        # Extract column names
-        cols = []
-        for title in categories.categories.tolist()[0].split(';'):
-            cols.append(title.split('-')[0])
 
-        # Create a new data frame with categories as columns
-        categories.categories = categories.categories.str.split(';')
-        categories_new = pd.DataFrame(categories.categories.tolist(),columns = cols)
-        for c in cols:
-            categories_new[c] = categories_new[c].str.split('-')
-            categories_new[c] = categories_new[c].apply(lambda x: float(x[1]))
-        
-        # delete dataframe
-        del categories
+def clean_data(df):
+    '''
+    Description
+    ----------
+    
+    Parameters
+    ----------
 
-        # concat messages with categories
-        df = pd.concat([df,categories_new], axis = 1, sort = False)
+    Returns
+    ----------
+    '''
+    # Extract column names
+    cols = []
+    for title in df.categories.tolist()[0].split(';'):
+        cols.append(title.split('-')[0])
 
-        # delete unuseful columns
-        df.drop(['categories','original'], axis = 1, inplace = True)
+    # Create a new data frame with categories as columns
+    df.categories = df.categories.str.split(';')
+    categories_new = pd.DataFrame(df.categories.tolist(),columns = cols)
+    for c in cols:
+        categories_new[c] = categories_new[c].str.split('-')
+        categories_new[c] = categories_new[c].apply(lambda x: float(x[1]))
 
-        # count duplicates
-        duplicates_count = df.shape[0] - df.drop_duplicates().shape[0]
-        
-        # drop duplicates
-        df.drop_duplicates(inplace = True)
+    # concat messages with categories
+    df = pd.concat([df,categories_new], axis = 1, sort = False)
 
-        # drop null values
-        df.dropna(how='any', inplace = True)
+    # delete unuseful columns
+    df.drop(['categories','original','child_alone'], axis = 1, inplace = True)
+    
+    # drop duplicates
+    df.drop_duplicates(inplace = True)
 
-        # convert string columns to numeric
-        for c in df.columns[3:]:
-            df[c] = pd.to_numeric(df[c])
+    # drop null values
+    df.dropna(how='any', inplace = True)
 
-        # replace 2 (indirectly related) with 1 for related column
-        df['related'] = df['related'].replace(2,1)
+    # convert string columns to numeric
+    for c in df.columns[3:]:
+        df[c] = pd.to_numeric(df[c])
 
-        logging.info('Data cleaned successfully.')
+    # replace 2 (indirectly related) with 1 for related column
+    df['related'] = df['related'].replace(2,1)
+    df.to_csv('all.csv')
+    return df
 
-    except:
-        logging.exception('Failed to cleaning the data.')
+def save_data(df, db_name):
+    '''
+    Description
+    ----------
+    
+    Parameters
+    ----------
 
+    Returns
+    ----------
+    '''
     table_name = 'messages'
+    engine = create_engine('sqlite:///'+db_name)
+    df.to_sql(table_name, engine, index=False)
 
-    try:
-        engine = create_engine('sqlite:///'+db_name)
-        df.to_sql(table_name, engine, index=False)
-        logging.info('Clean data stored on {} SQLlite database \n'.format(db_name))
-    except:
-        logging.exception('Not able to create the database')
-        raise
+def main():
 
-if download:
-    download_csv()
-    process_data('messages.csv' , 'categories.csv', 'disaster_tweets.db')
-else:
-    process_data(messages_csv , categories_csv, db_name)
+    messages_csv = sys.argv[1]
+    categories_csv = sys.argv[2]
+    db_name = sys.argv[3]
+
+    print('load...')
+    df = load_data(messages_csv, categories_csv)
+
+    print('clean...')
+    df = clean_data(df)
+
+    print('save...')
+    save_data(df, db_name)
+    
+    
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(levelname)-8s %(message)s', 
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        handlers=[
+                            logging.FileHandler("process_data.log"),
+                            logging.StreamHandler()
+                            ])
+if __name__ == "__main__":
+    main()
+
+    
