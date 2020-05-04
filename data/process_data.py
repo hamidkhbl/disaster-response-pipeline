@@ -10,8 +10,17 @@ import sys
 
 def download_csv():
     '''
-    This method download csv files for the project 
-    and stores them on the current directory.
+    Description
+    This function downloads required csv files for the project from google drive and saves them on the current directory.
+    ----------
+    
+    Parameters
+    None
+    ----------
+
+    Returns
+    None
+    ----------
     '''
     categories_link = 'https://drive.google.com/u/0/uc?id=1cm6VF1dTLPxXt_97haeZUALOlqCpcIch&export=download'
     messages_link = 'https://drive.google.com/u/0/uc?id=1OBvKGf2RWVmQSvndI3_mSMjHsBIivoEw&export=download'
@@ -28,12 +37,16 @@ def download_csv():
 def load_data(messages_csv, categories_csv):
     '''
     Description
+    Loads messages and categories data and merges them.
     ----------
 
     Parameters
+    messages_csv: message files path
+    categories_csv: categories file path
     ----------
 
     Returns
+    Merged dataframe
     ----------
     '''
     messages = pd.read_csv(messages_csv)
@@ -45,12 +58,19 @@ def load_data(messages_csv, categories_csv):
 def clean_data(df):
     '''
     Description
+    Performs following data cleanins:
+        Extracts all the columns with values from categories column
+        Deletes unusful columns
+        Drops duplicate and null values
+        Converts string numbers to numeric
     ----------
     
     Parameters
+    df: Merged dataframe
     ----------
 
     Returns
+    A clean dataframe 
     ----------
     '''
     # Extract column names
@@ -89,12 +109,16 @@ def clean_data(df):
 def save_data(df, db_name):
     '''
     Description
+    Saves a dataframe into a SQLlite database.
     ----------
     
     Parameters
+    df: Dataframe
+    db_name: name of the database
     ----------
 
     Returns
+    None
     ----------
     '''
     table_name = 'messages'
@@ -103,27 +127,51 @@ def save_data(df, db_name):
 
 def main():
 
-    messages_csv = sys.argv[1]
-    categories_csv = sys.argv[2]
-    db_name = sys.argv[3]
-
-    print('load...')
-    df = load_data(messages_csv, categories_csv)
-
-    print('clean...')
-    df = clean_data(df)
-
-    print('save...')
-    save_data(df, db_name)
-    
-    
     logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s %(levelname)-8s %(message)s', 
-                        datefmt='%Y-%m-%d %H:%M:%S',
-                        handlers=[
-                            logging.FileHandler("process_data.log"),
-                            logging.StreamHandler()
-                            ])
+                    format='%(asctime)s %(levelname)-8s %(message)s', 
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    handlers=[
+                        logging.FileHandler("process_data.log"),
+                        logging.StreamHandler()
+                        ])
+    try:
+        messages_csv = sys.argv[1]
+        categories_csv = sys.argv[2]
+        db_name = sys.argv[3]
+    except:
+        logging.info('Downloading csv files...')
+        try:
+            download_csv()
+        except:
+            logging.exception('Failed to download csv files!')
+            raise
+        messages_csv = 'categories.csv'
+        categories_csv = 'messages.csv'
+        db_name = 'disaster_tweets.db'
+
+
+    logging.info('Loading csv files...')
+    try:
+        df = load_data(messages_csv, categories_csv)
+    except:
+        logging.exception('Failed to load the csv files!')
+        raise
+
+
+    logging.info('Cleaning data...')
+    try:
+        df = clean_data(df)
+    except:
+        logging.exception('Failed in cleaning phase!')
+        raise
+
+    logging.info('Saving data...')
+    try:
+        save_data(df, db_name)
+    except:
+        logging.exception('Failed while saving the clean data on the database!')
+        raise
+    
 if __name__ == "__main__":
     main()
 
