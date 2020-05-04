@@ -33,9 +33,9 @@ def read_data(db_name):
 
 
 def tokenize(text):
-    porter = PorterStemmer()
+    #porter = PorterStemmer()
     lemmatizer = WordNetLemmatizer()
-    inner_text = re.sub(r"[^a-zA-Z0-1]"," ", text.lower())
+    inner_text = re.sub(r"[^a-zA-Z0-9]"," ", text.lower())
     tokens = word_tokenize(inner_text)
     stop_words = stopwords.words('english')
     tokens = [lemmatizer.lemmatize(word) for word in tokens if word not in stop_words]
@@ -48,7 +48,7 @@ def train_clf(df):
     pipeline = Pipeline([
         ('vect',CountVectorizer(tokenizer=tokenize)),
         ('tfidf', TfidfTransformer()),
-        ('clf', RandomForestClassifier())
+        ('clf', RandomForestClassifier(max_depth=3))
     ])
 
     from sklearn.model_selection import train_test_split
@@ -88,7 +88,6 @@ except:
 def main():
     train_clf(read_data(db_name))
 
-print('running ...')
 main()
 
 
