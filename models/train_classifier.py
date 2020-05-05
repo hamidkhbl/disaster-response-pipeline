@@ -23,6 +23,7 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.pipeline import Pipeline, FeatureUnion
 
+import logging
 import sys
 import pickle
 import sqlite3
@@ -71,10 +72,10 @@ def train_model(df):
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
-    print("Classification:")
+    logging.info('Classification Report')
     print(classification_report(y_test, y_pred)) 
 
-    print("Accuracy Score:")
+    logging.info("Accuracy Score:")
     print(accuracy_score(y_test, y_pred)) 
 
     return model
@@ -86,18 +87,27 @@ def save_model(model):
 
       
 def main():
+
+    logging.basicConfig(level=logging.INFO,
+                format='%(asctime)s %(levelname)-8s %(message)s', 
+                datefmt='%Y-%m-%d %H:%M:%S',
+                handlers=[
+                    logging.FileHandler("train_classifier.log"),
+                    logging.StreamHandler()
+                    ])
     try:
         db_name = argv[1]
     except:
         try:
             db_name = r"..\data\disaster_tweets.db"
         except:
-            print('Database not found')
+            logging.exception('Database not found')
+            raise
 
-    print('Training the model...')
+    logging.info('Training the model...')
     model = train_model(read_data(db_name))
 
-    print('Saving the model...')
+    logging.info('Saving the model...')
     save_model(model)
 
 if __name__ == "__main__":
