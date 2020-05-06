@@ -47,7 +47,6 @@ def index():
 def plots():
     
     # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
 
@@ -67,9 +66,14 @@ def plots():
         cat_names.append(k.replace('_',' '))
         cat_counts.append(v)
 
+    # Distrbution of of category counts
+
+    df['fit_count'] = df.apply(lambda x: x[3:].sum(), axis=1)
+
+    cat_counts_dist = df.groupby('fit_count').count()['message']
+    cat_names_dist = list(cat_counts_dist.index)
 
     # create visuals
-    # TODO: Below is an example - modify to create your own visuals
     graphs = [
                  {
             'data': [
@@ -93,6 +97,26 @@ def plots():
         },
         {
             'data': [
+                Scatter(
+                    x= cat_names_dist,
+                    y= cat_counts_dist
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Count of Categories',
+                'margin': {'b': 150},
+                'yaxis': {
+                    'title': "Message count"
+                },
+                'xaxis': {
+                    'title': "Category count",
+                     'tickangle' : 0
+                }
+            }
+        },
+        {
+            'data': [
                 Bar(
                     x=genre_names,
                     y=genre_counts
@@ -109,7 +133,6 @@ def plots():
                 }
             }
         }
-
 
     ]
     
