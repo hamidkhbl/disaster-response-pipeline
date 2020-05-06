@@ -26,7 +26,8 @@ Go to http://0.0.0.0:3001/
 This code is tested on Python 3.7.6
 
 ## Project Motivation<a name="motivation"></a>
-When a disaster such as a flood or a storm happens, people's tweet on the effected region contains useful information. In this project, we try to tag tweets based on the content of the tweet. This project can help to identify locations and people with a need to help.
+When a disaster such as a flood or a storm happens, people's tweet on the effected region contains useful information. In this project, we try to tag tweets based on the content of the tweet. This project can help to identify locations and people with a need to help. Here is an example of a mesage and categories identified by the model.<br> <br>
+![Screen_shot](/images/sample.png)
 
 ## Licensing, Authors, Acknowledgements<a name="licensing"></a>
 Must give credit to [Figure8](https://www.figure-eight.com/)  for the data.
