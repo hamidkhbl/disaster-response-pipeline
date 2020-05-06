@@ -54,7 +54,7 @@ def train_model(df):
     pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer=tokenize)),
         ('tfidf', TfidfTransformer()),
-        ('clf', MultiOutputClassifier(RandomForestClassifier(), n_jobs=1)),
+        ('clf', MultiOutputClassifier(RandomForestClassifier(class_weight='balanced'), n_jobs=1)),
     ])
 
     parameters = {  
@@ -73,16 +73,16 @@ def train_model(df):
     y_pred = model.predict(X_test)
 
     logging.info('Classification Report')
-    print(classification_report(y_test, y_pred)) 
+    logging.info(classification_report(y_test, y_pred)) 
 
     logging.info("Accuracy Score:")
-    print(accuracy_score(y_test, y_pred)) 
+    logging.info(accuracy_score(y_test, y_pred)) 
 
     return model
 
-def save_model(model):
+def save_model(model, file_name):
     # save the model to disk
-    pickle.dump(model, open('model.pkl', 'wb'))
+    pickle.dump(model, open(file_name, 'wb'))
 
 
       
@@ -97,9 +97,11 @@ def main():
                     ])
     try:
         db_name = argv[1]
+        file_name = argv[2]
     except:
         try:
             db_name = r"..\data\disaster_tweets.db"
+            file_name ='model.pkl'
         except:
             logging.exception('Database not found')
             raise
@@ -108,7 +110,7 @@ def main():
     model = train_model(read_data(db_name))
 
     logging.info('Saving the model...')
-    save_model(model)
+    save_model(model, file_name)
 
 if __name__ == "__main__":
     main()
