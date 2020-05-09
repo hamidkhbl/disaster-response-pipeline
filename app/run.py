@@ -68,9 +68,8 @@ def plots():
 
     # Distrbution of of category counts
 
-    df['fit_count'] = df.apply(lambda x: x[3:].sum(), axis=1)
+    cat_counts_dist = df[df.columns[3:]].sum(axis=1).value_counts().sort_index()
 
-    cat_counts_dist = df.groupby('fit_count').count()['message']
     cat_names_dist = list(cat_counts_dist.index)
 
     # create visuals
